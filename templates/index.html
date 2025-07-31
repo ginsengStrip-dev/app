@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Titanic Survival Predictor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="container">
+    <h1>Titanic Survival Predictor</h1>
+    <form method="POST">
+      <label>Pclass:
+        <select name="Pclass" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </label>
+      <label>Age: <input type="number" step="0.1" name="Age" required></label>
+      <label>Siblings/Spouse Aboard (SibSp): <input type="number" name="SibSp" required></label>
+      <label>Parents/Children Aboard (Parch): <input type="number" name="Parch" required></label>
+      <label>Fare: <input type="number" step="0.01" name="Fare" required></label>
+      <label>Sex:
+        <select name="Sex" required>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </label>
+      <label>Embarked:
+        <select name="Embarked" required>
+          <option value="S">Southampton</option>
+          <option value="C">Cherbourg</option>
+          <option value="Q">Queenstown</option>
+        </select>
+      </label>
+      <button type="submit">Predict</button>
+    </form>
+
+    {% if result is not none %}
+      <div class="result">Prediction: <strong>{{ result }}</strong></div>
+    {% endif %}
+  </div>
+</body>
+</html>

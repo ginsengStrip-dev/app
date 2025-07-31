@@ -1,51 +1,50 @@
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-import pandas as pd
+from flask import Flask, render_template, request
 import joblib
+import numpy as np
+import pandas as pd
 
-# Load the saved model and column order
+app = Flask(__name__)
+
+# Load model and column names
 model = joblib.load("titanic_model.pkl")
 model_columns = joblib.load("model_columns.pkl")
 
-app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        try:
+            # Retrieve form values
+            Pclass = int(request.form["Pclass"])
+            Age = float(request.form["Age"])
+            SibSp = int(request.form["SibSp"])
+            Parch = int(request.form["Parch"])
+            Fare = float(request.form["Fare"])
+            Sex = request.form["Sex"]
+            Embarked = request.form["Embarked"]
 
-@app.get("/", response_class=HTMLResponse)
-async def form_page(request: Request):
-    return templates.TemplateResponse("form.html", {"request": request})
+            # One-hot encoding
+            input_dict = {
+                "Pclass": Pclass,
+                "Age": Age,
+                "SibSp": SibSp,
+                "Parch": Parch,
+                "Fare": Fare,
+                f"Sex_{Sex}": 1,
+                f"Embarked_{Embarked}": 1
+            }
 
-@app.post("/predict", response_class=HTMLResponse)
-async def predict(
-    request: Request,
-    Pclass: int = Form(...),
-    Age: float = Form(...),
-    SibSp: int = Form(...),
-    Parch: int = Form(...),
-    Fare: float = Form(...),
-    Sex: str = Form(...),
-    Embarked: str = Form(...)
-):
-    # Prepare input dictionary
-    input_dict = {
-        'Pclass': Pclass,
-        'Age': Age,
-        'SibSp': SibSp,
-        'Parch': Parch,
-        'Fare': Fare,
-        'Sex_female': 1 if Sex == 'female' else 0,
-        'Sex_male': 1 if Sex == 'male' else 0,
-        'Embarked_C': 1 if Embarked == 'C' else 0,
-        'Embarked_Q': 1 if Embarked == 'Q' else 0,
-        'Embarked_S': 1 if Embarked == 'S' else 0
-    }
+            # Build full feature vector with 0s
+            input_data = pd.DataFrame([input_dict], columns=model_columns).fillna(0)
 
-    input_df = pd.DataFrame([input_dict])
-    
-    # Ensure same column order
-    input_df = input_df.reindex(columns=model_columns, fill_value=0)
-    
-    prediction = model.predict(input_df)[0]
-    result = "Survived" if prediction == 1 else "Did not survive"
-    
-    return templates.TemplateResponse("result.html", {"request": request, "result": result})
+            # Prediction
+            prediction = model.predict(input_data)[0]
+            result = "Survived" if prediction == 1 else "Did not survive"
+            return render_template("index.html", result=result)
+
+        except Exception as e:
+            return render_template("index.html", result="Error: " + str(e))
+
+    return render_template("index.html", result=None)
+
+if __name__ == "__main__":
+    app.run(debug=True)
